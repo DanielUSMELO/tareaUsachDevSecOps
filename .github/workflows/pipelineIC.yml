@@ -161,12 +161,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Paso 1: Checkout del código fuente
-      - name: Checkout Source Code
-        uses: actions/checkout@v3
-
-
-      # Paso 3: Construir la imagen Docker
-      - name: Build Docker Image
-        run: |
-          docker buildx build --tag laboratorio-devsecops --platform linux/amd64 . --load
+       - name: Build and push Docker images
+  
+         uses: docker/build-push-action@v6.11.0
+  
