@@ -13,80 +13,73 @@ jobs:
 
       - name: Set up JDK 17
         uses: actions/setup-java@v2
-        with: 
+        with:
           java-version: '17'
-          distribution: 'adopt'
+          distribution: 'adopt' 
 
-      - name: Set Environment Variables
+      - name: Set Environment Variables     
         run: echo "BRANCH_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
 
       # Triggering SonarQube analysis as results of it are required by Quality Gate check.
       - name: SonarQube Scan
-        uses: sonarsource/sonarqube-scan-action@master
+        uses: sonarsource/sonarqube-scan-action@master 
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
 
-  - name: Validate Quality Gate
-    run: |
-      echo "Validando el estado del Quality Gate..."
+      - name: Validate Quality Gate
+        run: |
+          echo "Validando el estado del Quality Gate..."
 
-      # Definir REPO_NAME (usando el projectKey de SonarCloud)
-      REPO_NAME="DanielUSMELO_tareaUsachDevSecOps"
+          # Definir REPO_NAME (usando el projectKey de SonarCloud)
+          REPO_NAME="DanielUSMELO_tareaUsachDevSecOps"
 
-      # Obtener el analysisId
-      response=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/ce/component?component=$REPO_NAME")
-      echo "Respuesta de la API para obtener analysisId: $response"
-    
-      analysisId=$(echo "$response" | jq -r '.current.analysisId // empty')
+          # Obtener el analysisId
+          response=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/ce/component?component=$REPO_NAME")
+          echo "Respuesta de la API para obtener analysisId: $response"
+          
+          analysisId=$(echo "$response" | jq -r '.current.analysisId // empty')
 
-      if [ -z "$analysisId" ]; then
-        echo "Error: No se pudo obtener el analysisId. Verifica el componente y las credenciales."
-        exit 1
-      fi
+          if [ -z "$analysisId" ]; then
+            echo "Error: No se pudo obtener el analysisId. Verifica el componente y las credenciales."
+            exit 1
+          fi
 
-      echo "analysisId obtenido: $analysisId"
+          echo "analysisId obtenido: $analysisId"
 
-      # Obtener el estado del Quality Gate
-      response_quality_gate=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/qualitygates/project_status?analysisId=$analysisId")
-      echo "Respuesta de la API para obtener Quality Gate status: $response_quality_gate"
-    
-      qualityGateStatus=$(echo "$response_quality_gate" | jq -r '.projectStatus.status // empty')
+          # Obtener el estado del Quality Gate
+          response_quality_gate=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/qualitygates/project_status?analysisId=$analysisId")
+          echo "Respuesta de la API para obtener Quality Gate status: $response_quality_gate"
+          
+          qualityGateStatus=$(echo "$response_quality_gate" | jq -r '.projectStatus.status // empty')
 
-      if [ -z "$qualityGateStatus" ]; then
-        echo "Error: No se pudo obtener el estado del Quality Gate. Verifica el análisis."
-        exit 1
-      fi
+          if [ -z "$qualityGateStatus" ]; then
+            echo "Error: No se pudo obtener el estado del Quality Gate. Verifica el análisis."
+            exit 1
+          fi
 
-      echo "Estado del Quality Gate: $qualityGateStatus"
+          echo "Estado del Quality Gate: $qualityGateStatus"
 
-      # Validar estado del Quality Gate
-      if [ "$qualityGateStatus" != "OK" ]; then
-        echo "El proyecto no cumple con el Quality Gate: $qualityGateStatus."
-        echo "Verificando vulnerabilidades críticas, altas y medias..."
-        
-        # Obtener el número de vulnerabilidades críticas, altas y medias
-        vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" \
-          "https://sonarcloud.io/api/issues/search?componentKeys=$REPO_NAME&types=VULNERABILITY&severities=CRITICAL,BLOCKER,MAJOR,MEDIUM" | jq -r '.total // 0')
-        
-        if [ "$vulnerabilities" -gt 0 ]; then
-          echo "Se encontraron $vulnerabilidades vulnerabilidades críticas, altas o medias. El proyecto no cumple con los estándares de seguridad."
-          exit 1
-        else
-          echo "No se encontraron vulnerabilidades críticas, altas o medias, pero el Quality Gate no fue aprobado."
-          exit 1
-        fi
-      else
-        echo "El proyecto cumple con el Quality Gate y no tiene vulnerabilidades críticas, altas o medias. Continuando sin problemas."
-      fi
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-
-
-
-
-
+          # Validar estado del Quality Gate
+          if [ "$qualityGateStatus" != "OK" ]; then
+            echo "El proyecto no cumple con el Quality Gate: $qualityGateStatus."
+            echo "Verificando vulnerabilidades críticas..."
+            
+            # Obtener el número de vulnerabilidades críticas
+            vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/issues/search?componentKeys=$REPO_NAME&types=VULNERABILITY&severities=CRITICAL,BLOCKER" | jq -r '.total // 0')
+            
+            if [ "$vulnerabilities" -gt 0 ]; then
+              echo "Se encontraron $vulnerabilities vulnerabilidades críticas. El proyecto no cumple con los estándares de seguridad."
+              exit 1
+            else
+              echo "No se encontraron vulnerabilidades críticas, pero el Quality Gate no fue aprobado."
+              exit 1
+            fi
+          else
+            echo "El proyecto cumple con el Quality Gate y no tiene vulnerabilidades críticas. Continuando sin problemas."
+          fi
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
           
 
