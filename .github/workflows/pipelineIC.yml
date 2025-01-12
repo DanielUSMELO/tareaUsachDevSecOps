@@ -171,7 +171,12 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Buil Docker Image
         run: |
-          docker build -t laboratorio-devsecops .
+          docker build -t laboratorio-devsecops:${{ github.sha }} .
+      - name: Push Docker Image
+        run: |
+          docker tag laboratorio-devsecops:${{ github.sha }} laboratorio-devsecops:latest
+          docker push laboratorio-devsecops:${{ github.sha }}
+          docker push laboratorio-devsecops:latest
        
 
       
