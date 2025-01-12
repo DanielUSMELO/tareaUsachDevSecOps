@@ -105,7 +105,7 @@ jobs:
               echo "Se encontraron $vulnerabilities vulnerabilidades críticas. El proyecto no cumple con los estándares de seguridad."
               exit 1
             else
-              echo "No se encontraron vulnerabilidades críticas, pero el Quality Gate fue.""
+              echo "No se encontraron vulnerabilidades críticas, pero el Quality Gate fue."
               exit 1
             fi
           fi
