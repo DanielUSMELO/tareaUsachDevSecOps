@@ -37,11 +37,21 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io 
 
-      # Optionally you can use the output from the Quality Gate in another step.
-      # The possible outputs of the `quality-gate-status` variable are `PASSED`, `WARN` or `FAILED`.
-      - name: "Example show SonarQube Quality Gate Status value"
-        run: echo "The Quality Gate status is ${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}"
-
+      - name: Validate for Critical, High, or Medium Vulnerabilities
+        run: |
+          echo "Checking for vulnerabilities..."
+          vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/issues/search?componentKeys=$SONAR_PROJECT_KEY&types=VULNERABILITY&severities=CRITICAL,HIGH,MEDIUM" | jq -r '.total')
+          
+          if [ "$vulnerabilities" -gt 0 ]; then
+            echo "Found $vulnerabilities vulnerabilities (Critical, High, or Medium). Failing the pipeline."
+            exit 1
+          else
+            echo "No Critical, High, or Medium vulnerabilities found. Continuing pipeline."
+          fi
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: DanielUSMELO_tareaUsachDevSecOps
 
       
 
