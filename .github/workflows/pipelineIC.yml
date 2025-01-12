@@ -40,9 +40,10 @@ jobs:
       - name: Validate for Critical, High, or Medium Vulnerabilities
         run: |
           echo "Checking for vulnerabilities..."
-          vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" \
-            "https://sonarcloud.io/api/issues/search?componentKeys=$SONAR_PROJECT_KEY&types=VULNERABILITY&severities=CRITICAL,HIGH,MEDIUM" | jq -r '.total')
-          
+          response=$(curl -s -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/issues/search?componentKeys=$SONAR_PROJECT_KEY&types=VULNERABILITY&severities=CRITICAL,HIGH,MEDIUM")
+          vulnerabilities=$(echo "$response" | jq -r '.total // 0') # Asegura que sea 0 si es nulo
+
           if [ "$vulnerabilities" -gt 0 ]; then
             echo "Found $vulnerabilities vulnerabilities (Critical, High, or Medium). Failing the pipeline."
             exit 1
@@ -51,7 +52,8 @@ jobs:
           fi
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_PROJECT_KEY: DanielUSMELO_tareaUsachDevSecOps
+        
+
 
       
 
