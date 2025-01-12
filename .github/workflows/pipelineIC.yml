@@ -139,7 +139,8 @@ jobs:
           echo "Verificando vulnerabilidades en las dependencias..."
 
           # Buscar vulnerabilidades de severidad CRITICAL, HIGH o MEDIUM en el reporte JSON generado
-          vulnerabilities=$(jq '[.dependencies[].vulnerabilities[] | select(.cvssv3.baseSeverity == "CRITICAL" or .cvssv3.baseSeverity == "HIGH" or .cvssv3.baseSeverity == "MEDIUM")] | length' ./reports/dependency-check-report.json)
+          vulnerabilities=$(jq '[.dependencies[]? | select(.vulnerabilities != null) | .vulnerabilities[]? | select(.cvssv3.baseSeverity == "CRITICAL" or .cvssv3.baseSeverity == "HIGH" or .cvssv3.baseSeverity == "MEDIUM")] | length' ./reports/dependency-check-report.json)
+
 
 
 
