@@ -128,7 +128,7 @@ jobs:
         with: 
           projects: '${{ github.event.repository.name }}'
           path: '.' 
-          format: 'HTML'
+          format: 'JSON'  # Cambiar el formato a JSON
           args: >
             --out ./reports
             --failOnCVSS
@@ -138,8 +138,8 @@ jobs:
         run: |
           echo "Verificando vulnerabilidades en las dependencias..."
 
-          # Buscar vulnerabilidades de severidad CRITICAL, HIGH, o MEDIUM en el reporte generado
-          vulnerabilities=$(grep -E 'CVSS: (10\.0|9\.[0-9]|8\.[0-9]|7\.[0-9]|6\.[0-9])' ./reports/*.html | wc -l)
+          # Buscar vulnerabilidades de severidad CRITICAL, HIGH o MEDIUM en el reporte JSON generado
+          vulnerabilities=$(jq '[.vulnerabilities[] | select(.cvssV3 >= 7.0)]' ./reports/*.json | wc -l)
 
           if [ "$vulnerabilities" -gt 0 ]; then
             echo "Se encontraron $vulnerabilities vulnerabilidades críticas, altas o medias en las dependencias."
@@ -153,7 +153,3 @@ jobs:
         with:
           name: DepCheck Report
           path: ./reports
-   
-
-
-          
