@@ -42,6 +42,7 @@ jobs:
 
       - name: Verificar análisis en SonarCloud
         run: |
+          REPO_NAME="DanielUSMELO_tareaUsachDevSecOps"
           response=$(curl -s -u "$SONAR_TOKEN:" \
             "https://sonarcloud.io/api/ce/component?component=$REPO_NAME")
           echo "Respuesta de la API: $response"
@@ -49,6 +50,8 @@ jobs:
       - name: Validate Quality Gate
         run: |
           echo "Validando el estado del Quality Gate..."
+
+          REPO_NAME="DanielUSMELO_tareaUsachDevSecOps"
           
           # Obtener el analysisId
           analysisId=$(curl -s -u "$SONAR_TOKEN:" \
@@ -89,7 +92,7 @@ jobs:
           fi  
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          REPO_NAME: ${{ github.event.repository.name }} 
+          
 
    
 
