@@ -120,7 +120,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Dependecy Check
+      - name: Dependency Check
         uses: dependency-check/Dependency-Check_Action@1.1.0
         env:
           JAVA_HOME: /opt/jdk
@@ -147,14 +147,12 @@ jobs:
           else
             echo "No se encontraron vulnerabilidades críticas, altas o medias en las dependencias."
           fi
+
       - name: Upload Test Results
         uses: actions/upload-artifact@master
         with:
           name: DepCheck Report
-          path: ./reports 
-
-          
-
+          path: ./reports
    
 
 
