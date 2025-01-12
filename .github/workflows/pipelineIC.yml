@@ -134,15 +134,13 @@ jobs:
             --failOnCVSS
             --enableRetired
 
-      - name: Verificar contenido del reporte
-        run: |
-          cat ./reports/dependency-check-report.json
       - name: Check for vulnerabilities
         run: |
           echo "Verificando vulnerabilidades en las dependencias..."
 
           # Buscar vulnerabilidades de severidad CRITICAL, HIGH o MEDIUM en el reporte JSON generado
-          vulnerabilities=$(jq '[.vulnerabilities[] | select(.cvssV3 >= 7.0)]' ./reports/*.json | wc -l)
+          vulnerabilities=$(jq '[.vulnerabilities[] | select(.cvssv3.baseSeverity == "CRITICAL" or .cvssv3.baseSeverity == "HIGH" or .cvssv3.baseSeverity == "MEDIUM")] | length' ./reports/dependency-check-report.json)
+
 
           if [ "$vulnerabilities" -gt 0 ]; then
             echo "Se encontraron $vulnerabilities vulnerabilidades críticas, altas o medias en las dependencias."
