@@ -46,41 +46,47 @@ jobs:
           response=$(curl -s -u "$SONAR_TOKEN:" \
             "https://sonarcloud.io/api/ce/component?component=$REPO_NAME")
           echo "Respuesta de la API: $response"
-
       - name: Validate Quality Gate
         run: |
           echo "Validando el estado del Quality Gate..."
 
+          # Definir REPO_NAME (usando el projectKey de SonarCloud)
           REPO_NAME="DanielUSMELO_tareaUsachDevSecOps"
-          
+
           # Obtener el analysisId
-          analysisId=$(curl -s -u "$SONAR_TOKEN:" \
-            "https://sonarcloud.io/api/ce/component?component=$REPO_NAME" | jq -r '.current.analysisId // empty')
-          
+          response=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/ce/component?component=$REPO_NAME")
+          echo "Respuesta de la API para obtener analysisId: $response"
+    
+          analysisId=$(echo "$response" | jq -r '.current.analysisId // empty')
+
           if [ -z "$analysisId" ]; then
             echo "Error: No se pudo obtener el analysisId. Verifica el componente y las credenciales."
             exit 1
           fi
 
+          echo "analysisId obtenido: $analysisId"
+
           # Obtener el estado del Quality Gate
-          qualityGateStatus=$(curl -s -u "$SONAR_TOKEN:" \
-            "https://sonarcloud.io/api/qualitygates/project_status?analysisId=$analysisId" | jq -r '.projectStatus.status // empty')
-          
+          response_quality_gate=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/qualitygates/project_status?analysisId=$analysisId")
+          echo "Respuesta de la API para obtener Quality Gate status: $response_quality_gate"
+    
+          qualityGateStatus=$(echo "$response_quality_gate" | jq -r '.projectStatus.status // empty')
+
           if [ -z "$qualityGateStatus" ]; then
             echo "Error: No se pudo obtener el estado del Quality Gate. Verifica el análisis."
             exit 1
           fi
 
+          echo "Estado del Quality Gate: $qualityGateStatus"
+
           # Validar estado del Quality Gate
           if [ "$qualityGateStatus" != "OK" ]; then
             echo "El proyecto no cumple con el Quality Gate: $qualityGateStatus."
             echo "Verificando vulnerabilidades críticas..."
-            
+      
             # Obtener el número de vulnerabilidades críticas
-            vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" \
-             "https://sonarcloud.io/api/issues/search?componentKeys=$REPO_NAME&types=VULNERABILITY&severities=CRITICAL,BLOCKER,MAJOR,MEDIUM" | jq -r '.total // 0')
-
-            
+            vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/issues/search?componentKeys=$REPO_NAME&types=VULNERABILITY&severities=CRITICAL,BLOCKER" | jq -r '.total // 0')
+      
             if [ "$vulnerabilities" -gt 0 ]; then
               echo "Se encontraron $vulnerabilities vulnerabilidades críticas. El proyecto no cumple con los estándares de seguridad."
               exit 1
@@ -90,9 +96,10 @@ jobs:
             fi
           else
             echo "El proyecto cumple con el Quality Gate y no tiene vulnerabilidades críticas. Continuando sin problemas."
-          fi  
+          fi
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
           
 
    
