@@ -20,9 +20,10 @@ jobs:
       - name: Set Environment Variables     
         run: echo "BRANCH_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
 
-    
+      
 
       - name: Validate and Create SonarCloud Project
+        uses: SonarSource/sonarcloud-github-action@v2.2.0
         id: validate-project
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -56,10 +57,9 @@ jobs:
             echo "project_created=false" >> $GITHUB_ENV
           fi
 
-      - name: Enable execution of gradlew
-        run: chmod 777 gradlew
 
       - name: Perform Initial Analysis (if Project Created)
+        uses: SonarSource/sonarcloud-github-action@v2.2.0
         if: env.project_created == 'true'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -74,6 +74,7 @@ jobs:
             -Dsonar.branch.name=main
 
       - name: Perform Branch Analysis
+        uses: SonarSource/sonarcloud-github-action@v2.2.0
         if: env.project_created == 'false'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
