@@ -157,7 +157,7 @@ jobs:
           name: DepCheck Report
           path: ./reports
 
-    build-docker-image:
+  build-docker-image:
     runs-on: ubuntu-latest
 
     steps:
