@@ -70,7 +70,7 @@ jobs:
           "https://sonarcloud.io/api/issues/search?componentKeys=$REPO_NAME&types=VULNERABILITY&severities=CRITICAL,BLOCKER,MAJOR,MEDIUM" | jq -r '.total // 0')
         
         if [ "$vulnerabilities" -gt 0 ]; then
-          echo "Se encontraron $vulnerabilities vulnerabilidades críticas, altas o medias. El proyecto no cumple con los estándares de seguridad."
+          echo "Se encontraron $vulnerabilidades vulnerabilidades críticas, altas o medias. El proyecto no cumple con los estándares de seguridad."
           exit 1
         else
           echo "No se encontraron vulnerabilidades críticas, altas o medias, pero el Quality Gate no fue aprobado."
@@ -81,6 +81,7 @@ jobs:
       fi
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
 
 
 
