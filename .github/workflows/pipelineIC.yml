@@ -96,7 +96,7 @@ jobs:
             fi
           else
             echo "El proyecto cumple con el Quality Gate ."
-            echo "Verificando vulnerabilidades críticas, altas y medias.""
+            echo "Verificando vulnerabilidades críticas, altas y medias."
       
             # Obtener el número de vulnerabilidades críticas
             vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/issues/search?componentKeys=$REPO_NAME&types=VULNERABILITY&severities=CRITICAL,BLOCKER,HIGH,MEDIUM" | jq -r '.total // 0')
