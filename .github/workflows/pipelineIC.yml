@@ -98,7 +98,7 @@ jobs:
             echo "El proyecto cumple con el Quality Gate ."
             echo "Verificando vulnerabilidades críticas, altas y medias."
       
-            response_vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/issues/search?componentKeys=$REPO_NAME&types=VULNERABILITY&severities=CRITICAL,BLOCKER,HIGH,MEDIUM")
+            response_vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/issues/search?componentKeys=$REPO_NAME&types=VULNERABILITY&severities=CRITICAL,BLOCKER,MAJOR,MINOR")
             echo "Respuesta de la API para obtener vulnerabilidades: $response_vulnerabilities"
 
             vulnerabilities=$(echo "$response_vulnerabilities" | jq -r '.total // 0')
