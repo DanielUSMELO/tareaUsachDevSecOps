@@ -104,15 +104,41 @@ jobs:
             vulnerabilities=$(echo "$response_vulnerabilities" | jq -r '.total // 0')
       
             if [ "$vulnerabilities" -gt 0 ]; then
-              echo "Se encontraron $vulnerabilities vulnerabilidades críticas. El proyecto no cumple con los estándares de seguridad."
+              echo "Se encontraron $vulnerabilities vulnerabilidades críticas, altas o medias, no se cumplen con los estandaresn de seguridad.""
               exit 1
             else
-              echo "No se encontraron vulnerabilidades críticas, pero el Quality Gate fue $vulnerabilities"
+              echo "No se encontraron vulnerabilidades críticas, altas, o medias y el quality check fue aprobada." 
             
             fi
           fi
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  SCA:
+    needs: SAST
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Dependecy Check
+        uses: dependecy-check/Dependecy-Check_Action@1.1.0
+        env:
+          JAVA_HOME: /opt/jdk
+        id: Depcheck
+        with: 
+          projects: '${{ github.event.repository.name }}'
+          path: '.' 
+          format: 'HTML'
+          args: >
+            --out ./reports
+            --failOnCVSS
+            --enableRetired
+      - name: Upload Test Results
+        uses: actions/upload-artifact@master
+        with:
+          name: DepCheck Report
+          path: ./reports
 
           
 
