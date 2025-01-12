@@ -171,9 +171,8 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Buil Docker Image
         run: |
-          docker buildx build --tag laboratorio-devsecops --platform linux/amd64 . --load
-        env:
-          DOCKER_CLI_EXPERIMENTAL: enabled
+          docker build -t laboratorio-devsecops .
+       
 
       
   
