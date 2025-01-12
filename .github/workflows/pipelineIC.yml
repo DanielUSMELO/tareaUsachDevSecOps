@@ -27,23 +27,20 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
 
-      # Check the Quality Gate status.
-      - name: SonarQube Quality Gate check
+      - name: SonarQube Quality Gate Check
         id: sonarqube-quality-gate-check
         uses: sonarsource/sonarqube-quality-gate-action@master
         with:
           pollingTimeoutSec: 600
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io 
 
       - name: Validate for Critical, High, or Medium Vulnerabilities
         run: |
           echo "Checking for vulnerabilities..."
-          response=$(curl -s -u "$SONAR_TOKEN:" \
-            "https://sonarcloud.io/api/issues/search?componentKeys=$SONAR_PROJECT_KEY&types=VULNERABILITY&severities=CRITICAL,HIGH,MEDIUM")
-          vulnerabilities=$(echo "$response" | jq -r '.total // 0') # Asegura que sea 0 si es nulo
-
+          vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/issues/search?componentKeys=$SONAR_PROJECT_KEY&types=VULNERABILITY&severities=CRITICAL,HIGH,MEDIUM" | jq -r '.total')
+          
           if [ "$vulnerabilities" -gt 0 ]; then
             echo "Found $vulnerabilities vulnerabilities (Critical, High, or Medium). Failing the pipeline."
             exit 1
@@ -52,8 +49,3 @@ jobs:
           fi
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        
-
-
-      
-
