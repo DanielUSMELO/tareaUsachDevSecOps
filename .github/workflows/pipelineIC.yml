@@ -138,7 +138,7 @@ jobs:
         uses: actions/upload-artifact@master
         with:
           name: DepCheck Report
-          path: ./reports
+          path: ./reports 
 
           
 
