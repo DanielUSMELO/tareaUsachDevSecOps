@@ -23,113 +23,114 @@ jobs:
       - name: Validate and Configure build.gradle
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run:
+        run: |
           if [ -f "build.gradle" ]; then
             echo "Encontró el archivo"
             echo "Verificando configuración del plugin sonar"
             if ! grep -q 'id "org.sonarqube" version "3.3" ' build.gradle; then
-              sed -i '/id '/''java'\''/a \ \ \ \ id '''org.sonarqube'\'' version '\''3.3'\''' build.gradle
+              sed -i '/id '\''java'\''/a \ \ \ \ id '\''org.sonarqube'\'' version '\''3.3'\''' build.gradle
               echo "Plugin de Sonarcloud añadido a build.gradle"
               cat build.gradle
             else
               echo "Plugin de sonarcloud ya está configurado en build.gradle"
             fi
-
           else
-            echo "no se encontró archivo build.gradle"
+            echo "No se encontró archivo build.gradle"
             exit 1
           fi
 
       - name: Validate and Create SonarCloud Project
-       id: validate-project
-       env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        REPO_NAME: ${{ github.event.repository }}
-      run: 
-        echo "Verificando si el proyecto $REPO_NAME existe en SonarCloud"
-        responde=$(curl -s -o /dev/null -w "%{http_code}" -u "$SONAR_TOKEN:" \
-          "https://sonarcloud.io/api/projects/search?projects=$REPO_NAME")
+        id: validate-project
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          echo "Verificando si el proyecto $REPO_NAME existe en SonarCloud"
+          response=$(curl -s -o /dev/null -w "%{http_code}" -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/projects/search?projects=$REPO_NAME")
 
-        if [ "responde" -ne 200]; then
-          echo "El proyecto no existe. Creandolo en SonarCloud"
-          create_response=$(curl -s -w "%{http_code}" -o /dev/null -X POST -u "$SONAR_TOKEN:" \
-            "https://sonarcloud.io/api/projects/create" \
-            -d "name=$REPO_NAME" \
-            -d "project=$REPO_NAME" \
-            -d "organization=devsecopsusach" \
-            -d "project=public" \)
-        if [ "$responde" -ne 201 ]; then
-          echo "Proyecto creado exitosamente"
-        fi
+          if [ "$response" -ne 200 ]; then
+            echo "El proyecto no existe. Creándolo en SonarCloud"
+            create_response=$(curl -s -w "%{http_code}" -o /dev/null -X POST -u "$SONAR_TOKEN:" \
+              "https://sonarcloud.io/api/projects/create" \
+              -d "name=$REPO_NAME" \
+              -d "project=$REPO_NAME" \
+              -d "organization=devsecopsusach" \
+              -d "visibility=public")
 
-        echo "Estableciendo rama main por defecto"
-        curl -s -f -x POST -u "$SONAR_TOKEN:" \
-          "https://sonarcloud.io/api/project_branches/rename" \
-          -d "name=main"
-          -d "project=$REPO_NAME"
-        echo "project_created=true" >> $GITHUB_ENV
-      else
-        echo "El proyecto ya existe en sonar"
-        echo "project_created=false" >> $GITHUB_ENV
-      fi
+            if [ "$create_response" -eq 201 ]; then
+              echo "Proyecto creado exitosamente"
+            fi
 
-  - name: Enable execution gradlew
-   run:
-    chmod 777 gradlew
+            echo "Estableciendo rama main por defecto"
+            curl -s -f -X POST -u "$SONAR_TOKEN:" \
+              "https://sonarcloud.io/api/project_branches/rename" \
+              -d "name=main" \
+              -d "project=$REPO_NAME"
+            echo "project_created=true" >> $GITHUB_ENV
+          else
+            echo "El proyecto ya existe en SonarCloud"
+            echo "project_created=false" >> $GITHUB_ENV
+          fi
 
-  - name: Perform Initial Analysis (if Project Created)
-   if: env.project_created == 'true'
-   env:
-    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    REPO_NAME: ${{ github.event.repository.name }}
-  run: 
-    echo "Realizando análisis inicial en la rama main..." 
-    ./gradlew sonarqube \
-      -Dsonar.projectKey=$REPO_NAME \
-      -Dsonar.organization=devsecopsusach \
-      -Dsonar.host.url=https://sonarcloud.io \
-      -Dsonar.token=$SONAR_TOKEN \
-      -Dsonar.branch.name=main
-  - name: Perform Branch Analysis
-    if: env.project_created == 'false'
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      REPO_NAME: ${{ github.event.repository.name }}
-      BRANCH_NAME: ${{ github.ref_name }}
-   run:
-      echo "Realizando análisis en la rama actual."
-      ./dradlew sonarqube \
-        -Dsonar.projectKey=$REPO_NAME \
-        -Dsonar.organization=devsecopsusach \
-        -Dsonar.host.url=https://sonarcloud.io \
-        -Dsonar.token=$SONAR_TOKEN \
-        -Dsonar.branch.name=$BRANCH_NAME
+      - name: Enable execution of gradlew
+        run: chmod 777 gradlew
 
-   - name: Validate Quality Gate 
-     env: 
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      REPO_NAME: ${{ github.event.repository.name }}
-    run: 
-      echo "Validando el estado del Quality Gate..."
-      analysisId=$(curl -s -u "$SONAR_TOKEN:" \
-        "https://sonarcloud.io/api/ce/component?componet=$REPO_NAME" | jq -r '.current.analysisId')
+      - name: Perform Initial Analysis (if Project Created)
+        if: env.project_created == 'true'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          echo "Realizando análisis inicial en la rama main..."
+          ./gradlew sonarqube \
+            -Dsonar.projectKey=$REPO_NAME \
+            -Dsonar.organization=devsecopsusach \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.token=$SONAR_TOKEN \
+            -Dsonar.branch.name=main
 
-      qualityGateStatus=$(curl -s -u "$SONAR_TOKEN:" \
-        "https://sonarcloud.io/api/qualitygates/project_status?analysisId=$analysisId" | jq -r '.projectStatus.status')
+      - name: Perform Branch Analysis
+        if: env.project_created == 'false'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          echo "Realizando análisis en la rama actual..."
+          ./gradlew sonarqube \
+            -Dsonar.projectKey=$REPO_NAME \
+            -Dsonar.organization=devsecopsusach \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.token=$SONAR_TOKEN \
+            -Dsonar.branch.name=$BRANCH_NAME
 
-      if [ "$qualityGateStatus" != "OK" ]; then
-        echo "El proyecto no cumple con el Quality Gate: $qualityGateStatus." 
-        echo "Verificando vulnerabilidades criticas..." 
-        vulnerabilities=$(curl -s -u "SONAR_TOKEN:" \
-          "https://sonarcloud.io/api/issues/search?componentKeys=$REPO_NAME&types=VULNERABILITY&severities=CRITICAL,BLOCKER" | jq -r '.total')
+      - name: Validate Quality Gate
+        env: 
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          echo "Validando el estado del Quality Gate..."
+          analysisId=$(curl -s -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/ce/component?component=$REPO_NAME" | jq -r '.current.analysisId')
 
-        if [ "$vulnerabilities" -gt 0]; then
-          echo "Se encontraron $vulnerabilities vunerabilidades criticas. El proyecto no cumple con los estandares de seguridad."
-          #exit 1
-        fi
-      else 
-        echo "El proyecyo cumple con el Quality Gate y no tiene vulnerabilidades criticas. Continuando sin problemas."
-      fi
+          qualityGateStatus=$(curl -s -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/qualitygates/project_status?analysisId=$analysisId" | jq -r '.projectStatus.status')
+
+          if [ "$qualityGateStatus" != "OK" ]; then
+            echo "El proyecto no cumple con el Quality Gate: $qualityGateStatus." 
+            echo "Verificando vulnerabilidades críticas..." 
+            vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" \
+              "https://sonarcloud.io/api/issues/search?componentKeys=$REPO_NAME&types=VULNERABILITY&severities=CRITICAL,BLOCKER" | jq -r '.total')
+
+            if [ "$vulnerabilities" -gt 0 ]; then
+              echo "Se encontraron $vulnerabilities vulnerabilidades críticas. El proyecto no cumple con los estándares de seguridad."
+              exit 1
+            fi
+          else 
+            echo "El proyecto cumple con el Quality Gate y no tiene vulnerabilidades críticas. Continuando sin problemas."
+          fi
+
 
       
 
