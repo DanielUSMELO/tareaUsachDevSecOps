@@ -104,7 +104,7 @@ jobs:
             vulnerabilities=$(echo "$response_vulnerabilities" | jq -r '.total // 0')
       
             if [ "$vulnerabilities" -gt 0 ]; then
-              echo "Se encontraron $vulnerabilities vulnerabilidades críticas, altas o medias, no se cumplen con los estandaresn de seguridad.""
+              echo "Se encontraron $vulnerabilities vulnerabilidades críticas, altas o medias, no se cumplen con los estandaresn de seguridad."
               exit 1
             else
               echo "No se encontraron vulnerabilidades críticas, altas, o medias y el quality check fue aprobada." 
@@ -115,7 +115,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   SCA:
-    needs: SAST
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
