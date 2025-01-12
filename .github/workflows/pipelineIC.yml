@@ -35,29 +35,51 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      - name: Validate Quality Gate
-        
-        run: |
-          echo "Validando el estado del Quality Gate..."
-          analysisId=$(curl -s -u "$SONAR_TOKEN:" \
-            "https://sonarcloud.io/api/ce/component?component=$REPO_NAME" | jq -r '.current.analysisId')
+          
+- name: Validate Quality Gate
+  run: |
+    echo "Validando el estado del Quality Gate..."
+    
+    # Obtener el analysisId
+    analysisId=$(curl -s -u "$SONAR_TOKEN:" \
+      "https://sonarcloud.io/api/ce/component?component=$REPO_NAME" | jq -r '.current.analysisId // empty')
+    
+    if [ -z "$analysisId" ]; then
+      echo "Error: No se pudo obtener el analysisId. Verifica el componente y las credenciales."
+      exit 1
+    fi
 
-          qualityGateStatus=$(curl -s -u "$SONAR_TOKEN:" \
-            "https://sonarcloud.io/api/qualitygates/project_status?analysisId=$analysisId" | jq -r '.projectStatus.status')
+    # Obtener el estado del Quality Gate
+    qualityGateStatus=$(curl -s -u "$SONAR_TOKEN:" \
+      "https://sonarcloud.io/api/qualitygates/project_status?analysisId=$analysisId" | jq -r '.projectStatus.status // empty')
+    
+    if [ -z "$qualityGateStatus" ]; then
+      echo "Error: No se pudo obtener el estado del Quality Gate. Verifica el análisis."
+      exit 1
+    fi
 
-          if [ "$qualityGateStatus" != "OK" ]; then
-            echo "El proyecto no cumple con el Quality Gate: $qualityGateStatus." 
-            echo "Verificando vulnerabilidades críticas..." 
-            vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" \
-              "https://sonarcloud.io/api/issues/search?componentKeys=$REPO_NAME&types=VULNERABILITY&severities=CRITICAL,BLOCKER" | jq -r '.total')
+    # Validar estado del Quality Gate
+    if [ "$qualityGateStatus" != "OK" ]; then
+      echo "El proyecto no cumple con el Quality Gate: $qualityGateStatus."
+      echo "Verificando vulnerabilidades críticas..."
+      
+      # Obtener el número de vulnerabilidades críticas
+      vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" \
+        "https://sonarcloud.io/api/issues/search?componentKeys=$REPO_NAME&types=VULNERABILITY&severities=CRITICAL,BLOCKER" | jq -r '.total // 0')
+      
+      if [ "$vulnerabilities" -gt 0 ]; then
+        echo "Se encontraron $vulnerabilities vulnerabilidades críticas. El proyecto no cumple con los estándares de seguridad."
+        exit 1
+      else
+        echo "No se encontraron vulnerabilidades críticas, pero el Quality Gate no fue aprobado."
+        exit 1
+      fi
+    else
+      echo "El proyecto cumple con el Quality Gate y no tiene vulnerabilidades críticas. Continuando sin problemas."
+    fi
+  env:
+    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    REPO_NAME: ${{ github.event.repository.name }}
 
-            if [ "$vulnerabilities" -gt 0 ]; then
-              echo "Se encontraron $vulnerabilities vulnerabilidades críticas. El proyecto no cumple con los estándares de seguridad."
-              exit 1
-            fi
-          else 
-            echo "El proyecto cumple con el Quality Gate y no tiene vulnerabilidades críticas. Continuando sin problemas."
-          fi
-        env: 
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
           
