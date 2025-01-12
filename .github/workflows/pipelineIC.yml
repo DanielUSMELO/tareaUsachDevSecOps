@@ -134,6 +134,9 @@ jobs:
             --failOnCVSS
             --enableRetired
 
+      - name: Verificar contenido del reporte
+        run: |
+          cat ./reports/dependency-check-report.json
       - name: Check for vulnerabilities
         run: |
           echo "Verificando vulnerabilidades en las dependencias..."
