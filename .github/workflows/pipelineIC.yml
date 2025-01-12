@@ -164,6 +164,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
       - name: Buil Docker Image
-          run: |
+        run: |
           docker buildx build --tag laboratorio-devsecops --platform linux/amd64 . --load
   
