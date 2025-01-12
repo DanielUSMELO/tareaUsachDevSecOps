@@ -161,7 +161,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-       - name: Build and push Docker images
-  
-         uses: docker/build-push-action@v6.11.0
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Buil Docker Image
+          run: |
+          docker buildx build --tag laboratorio-devsecops --platform linux/amd64 . --load
   
