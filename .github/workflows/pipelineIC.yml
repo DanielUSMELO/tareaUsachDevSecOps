@@ -35,6 +35,11 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+      - name: Mostrar REPO_NAME
+        run: echo "El REPO_NAME es $REPO_NAME"
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+
       - name: Validate Quality Gate
         run: |
           echo "Validando el estado del Quality Gate..."
