@@ -66,17 +66,17 @@ jobs:
             echo "Verificando vulnerabilidades críticas..."
             
             # Obtener el número de vulnerabilidades críticas
-            vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/issues/search?componentKeys=$REPO_NAME&types=VULNERABILITY&severities=CRITICAL,HIGH,MEDIUM.total // 0')
+            vulnerabilities=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/issues/search?componentKeys=$REPO_NAME&types=VULNERABILITY&severities=CRITICAL,HIGH,MEDIUM" | jq -r '.total')
             
             if [ "$vulnerabilities" -gt 0 ]; then
-              echo "Se encontraron $vulnerabilities vulnerabilidades críticas, altas o medias, el proyecto no cumple con los estandares de seguridad." 
+              echo "Se encontraron $vulnerabilities vulnerabilidades críticas. El proyecto no cumple con los estándares de seguridad."
               exit 1
             else
-              echo "No se encontraron vulnerabilidades críticas, altas o medias, pero el Quality Check no fue aprobado." 
+              echo "No se encontraron vulnerabilidades críticas, pero el Quality Gate no fue aprobado."
               exit 1
             fi
           else
-            echo "El proyecto cumple con el Quality Gate y no tiene vulnerabilidades críticas, altas o medias, continuando sin problemas.""
+            echo "El proyecto cumple con el Quality Gate y no tiene vulnerabilidades críticas. Continuando sin problemas."
           fi
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
