@@ -203,7 +203,7 @@ jobs:
         continue-on-error: true
 
   Despliegue:
-    needs: DockerBuild
+    needs: DockerScan
     runs-on: ubuntu-latest
     steps:
       - name: Log in to Docker Hub
