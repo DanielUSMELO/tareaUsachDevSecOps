@@ -211,9 +211,13 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Run Docker
+      - name: Pull Docker Image
         run: |
-          docker run --name container-devsecops -p 3000:3000 ${{ secrets.DOCKER_USER }}/laboratorio-devsecops:latest
+          docker pull ${{ secrets.DOCKER_USER }}/laboratorio-devsecops:latest
+
+      - name: Run Docker Container
+        run: |
+          docker run --name container-devsecops -d -p 3000:3000 ${{ secrets.DOCKER_USER }}/laboratorio-devsecops:latest
 
 
        
